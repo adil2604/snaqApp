@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="./asserts/css/bootstrap.min.css">
+    <style media="print" scoped="true">
+    .bg-success{
+      background-color: rgba(14, 173, 22, 0.3)!important;
+    }
+    .bg-danger{
+      background-color: rgba(232, 37, 7, 0.3)!important;
+    }
+    .bg-secondary{
+      background-color: rgba(179, 172, 171, 0.3)!important;
+    }
+    @media print {
+     .noprint {
+        display: none;
+     }
+    }
+    </style>
+    <style >
+    body{
+      -webkit-print-color-adjust:exact;
+      }
+    .bg-success{
+      background-color: rgba(14, 173, 22, 0.3)!important;
+    }
+    .bg-danger{
+      background-color: rgba(232, 37, 7, 0.3)!important;
+    }
+    .bg-secondary{
+      background-color: rgba(179, 172, 171, 0.3)!important;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Результаты</h5>
+        <p class="card-text">ФИО: {{surname}} {{name}}</p>
+        <p class="card-text">Предмет: {{subject}}</p>
+        <p v-if="correctAns" class="card-text">Ваш результат: {{(correctAns/length*100).toFixed(2)+"%"}} <div class="text-muted">{{correctAns}}/{{length}}</div></p>
+        <div class="list-group-item mb-2">
+          <div v-for="(value,key) in byCategories" class="text-muted">
+            <strong>{{key}} : {{value[0]}} из {{value[1]}}</strong>
+            <div v-for="question in questionByCategory[key]" v-bind:class="isCorrect(question[1])" style="max-width: 100%;height:auto ">
+              <img :src="question[0]" class="img-fluid" alt="">
+            </div>
+          </div>
+        </div>
+        <button  @click="print" class="noprint btn btn-primary">Распечатать</button>
+        <button  @click="closeWindow" class="noprint btn btn-danger">Выйти</button>
+
+      </div>
+    </div>
+  </body>
+  <script type="text/javascript" src="./asserts/js/vue.js"></script>
+
+  <script type="text/javascript">
+    require('bootstrap')
+    var win =require('electron').remote.getCurrentWindow()
+    const ipcRenderer=require('electron').remote.ipcRenderer
+    win.on('close',(e)=>{
+      ipcRenderer.send('refresh')
+    })
+    win.on('ready',(e)=>{
+      ipcRenderer.send('refresh')
+    })
+    const urlParams = new URLSearchParams(window.location.search);
+    var vue =new Vue({
+      el:'#app',
+      data:{
+        length:0,
+        correctAns:0,
+        answers:{},
+        questionByCategory:{},
+        byCategories:{},
+        name:urlParams.get('name'),
+        surname:urlParams.get('surname'),
+        subject:urlParams.get('subject')
+      },
+      mounted(){
+        this.set_data()
+        console.log(this.answers);
+        console.log(this.byCategories);
+      },
+      methods:{
+        isCorrect(point){
+          console.log(point);
+          if(point==1)
+            return "card card-body mt-2 bg-success"
+          else if (point<1 && point!=0)
+            return "card card-body mt-2 bg-secondary";
+          else {
+            return "card card-body mt-2 bg-danger";
+          }
+        },
+        print(){
+          window.print()
+        },
+        closeWindow(){
+          window.close()
+        },
+        set_data(){
+          for(let answer of urlParams.entries()){
+            if(!['name','surname','subject'].includes(answer[0])){
+              this.answers[answer[0]]=answer[1]
+              console.log(answer);
+              if(this.byCategories.hasOwnProperty(answer[0].split('/')[4])){
+                this.byCategories[answer[0].split('/')[4]][0]+=parseFloat(answer[1])
+                this.byCategories[answer[0].split('/')[4]][1]+=1
+              }
+              else{
+                this.byCategories[answer[0].split('/')[4]]=[parseFloat(answer[1]),1]
+              }
+              if(this.questionByCategory.hasOwnProperty(answer[0].split('/')[4])){
+                this.questionByCategory[answer[0].split('/')[4]].push(answer)
+              }
+              else{
+                this.questionByCategory[answer[0].split('/')[4]]=[answer]
+              }
+              this.correctAns+=parseFloat(answer[1])
+              this.length+=1
+            }
+            }
+
+        }
+      },
+    })
+  </script>
+
+</html>
