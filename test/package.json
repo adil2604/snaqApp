@@ -45,7 +45,7 @@
     "vue": "^2.6.11"
   },
   "devDependencies": {
-    "electron": "^8.0.1",
+    "electron": "^15.5.5",
     "electron-builder": "^22.3.2",
     "electron-packager": "^14.2.1"
   },
